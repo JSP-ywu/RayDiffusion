@@ -19,44 +19,6 @@ from pytorch3d.renderer import FoVPerspectiveCameras, PerspectiveCameras
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-HOSTNAME = socket.gethostname()
-
-if HOSTNAME in ["ender"]:
-    CO3D_ANNOTATION_DIR = "/data/ssd1/jason/co3d_v2_annotations_cropped"
-    CO3D_DIR = "/data/ssd1/jason/co3d_v2_cropped"
-elif HOSTNAME in [
-    "trinity-2-1",
-    "trinity-2-5",
-    "trinity-2-13",
-    "trinity-2-21",
-    "trinity-2-25",
-    "trinity-2-29",
-]:
-    # Note, trinity-2-5 only has backpack and hydrant
-    CO3D_DIR = "/ssd0/jasonzh2/co3d_v2_cropped"
-    CO3D_ANNOTATION_DIR = "/ssd0/jasonzh2/co3d_v2_annotations_cropped"
-elif "grogu" in HOSTNAME:
-    CO3D_ANNOTATION_DIR = "/grogu/user/amylin2/co3d_v2_annotations"
-    CO3D_DIR = "/grogu/datasets/co3d"
-elif HOSTNAME in ["autobot-1-18.eth", "trinity-0-32"]:
-    CO3D_DIR = "/scratch/jasonzh2/co3d_v2_cropped"
-    CO3D_ANNOTATION_DIR = "/scratch/jasonzh2/co3d_v2_annotations_cropped"
-
-
-if HOSTNAME == "ender":
-    order_path = "/data/ssd3/amyxlase/co3d_v2_random_order_{sample_num}/{category}.json"
-elif "trinity" in HOSTNAME:
-    order_path = "/home/jasonzh2/multiframe-relpose/data/co3d_v2_random_order_{sample_num}/{category}.json"
-elif "grogu" in HOSTNAME:
-    # order_path = "/home/jasonzh2/code/multiframe-relpose/output_new/co3d_v2_random_order_{sample_num}/{category}.json"
-    order_path = "/grogu/user/amylin2/co3d_random_order/co3d_v2_random_order_{sample_num}/{category}.json"
-elif "deckard" in HOSTNAME:
-    order_path = "/home/jason/relpose_release/data/co3d_v2_random_order_{sample_num}/{category}.json"
-else:
-    order_path = None
-    warnings.warn(f"No order path for {HOSTNAME}")
-
-
 TRAINING_CATEGORIES = [
     "apple",
     "backpack",
@@ -64,57 +26,57 @@ TRAINING_CATEGORIES = [
     "baseballbat",
     "baseballglove",
     "bench",
-    "bicycle",
-    "bottle",
-    "bowl",
-    "broccoli",
-    "cake",
-    "car",
-    "carrot",
-    "cellphone",
-    "chair",
-    "cup",
-    "donut",
-    "hairdryer",
-    "handbag",
-    "hydrant",
-    "keyboard",
-    "laptop",
-    "microwave",
-    "motorcycle",
-    "mouse",
-    "orange",
-    "parkingmeter",
-    "pizza",
-    "plant",
-    "stopsign",
-    "teddybear",
-    "toaster",
-    "toilet",
-    "toybus",
-    "toyplane",
-    "toytrain",
-    "toytruck",
-    "tv",
-    "umbrella",
-    "vase",
-    "wineglass",
+    # "bicycle",
+    # "bottle",
+    # "bowl",
+    # "broccoli",
+    # "cake",
+    # "car",
+    # "carrot",
+    # "cellphone",
+    # "chair",
+    # "cup",
+    # "donut",
+    # "hairdryer",
+    # "handbag",
+    # "hydrant",
+    # "keyboard",
+    # "laptop",
+    # "microwave",
+    # "motorcycle",
+    # "mouse",
+    # "orange",
+    # "parkingmeter",
+    # "pizza",
+    # "plant",
+    # "stopsign",
+    # "teddybear",
+    # "toaster",
+    # "toilet",
+    # "toybus",
+    # "toyplane",
+    # "toytrain",
+    # "toytruck",
+    # "tv",
+    # "umbrella",
+    # "vase",
+    # "wineglass",
 ]
 
 TEST_CATEGORIES = [
     "ball",
     "book",
-    "couch",
-    "frisbee",
-    "hotdog",
-    "kite",
-    "remote",
-    "sandwich",
-    "skateboard",
-    "suitcase",
+    # "couch",
+    # "frisbee",
+    # "hotdog",
+    # "kite",
+    # "remote",
+    # "sandwich",
+    # "skateboard",
+    # "suitcase",
 ]
 
-assert len(TRAINING_CATEGORIES) + len(TEST_CATEGORIES) == 51
+#assert len(TRAINING_CATEGORIES) + len(TEST_CATEGORIES) == 51
 
 Image.MAX_IMAGE_PIXELS = None
 ImageFile.LOAD_TRUNCATED_IMAGES = True

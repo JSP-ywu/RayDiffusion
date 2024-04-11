@@ -26,20 +26,12 @@ def load_model(
         device (str): Device to load the model on.
         custom_keys (dict): Dictionary of custom keys to override in the config.
     """
-    if checkpoint is None:
-        checkpoint_path = sorted(glob(osp.join(output_dir, "checkpoints", "*.pth")))[-1]
-    else:
-        if isinstance(checkpoint, int):
-            checkpoint_name = f"ckpt_{checkpoint:08d}.pth"
-        else:
-            checkpoint_name = checkpoint
-        checkpoint_path = osp.join(output_dir, "checkpoints", checkpoint_name)
-    print("Loading checkpoint", osp.basename(checkpoint_path))
-
-    cfg = OmegaConf.load(osp.join(output_dir, "hydra", "config.yaml"))
+    cfg = OmegaConf.load(osp.join(output_dir, "config.yaml"))
+    
     if custom_keys is not None:
         for k, v in custom_keys.items():
             OmegaConf.update(cfg, k, v)
+    
     noise_scheduler = NoiseScheduler(
         type=cfg.noise_scheduler.type,
         max_timesteps=cfg.noise_scheduler.max_timesteps,
@@ -56,6 +48,19 @@ def load_model(
         feature_extractor=cfg.model.feature_extractor,
         append_ndc=cfg.model.append_ndc,
     ).to(device)
+    
+    if cfg.traning.resume:
+        if checkpoint is None:
+            checkpoint_path = sorted(glob(osp.join(output_dir, "checkpoints", "*.pth")))[-1]
+        else:
+            if isinstance(checkpoint, int):
+                checkpoint_name = f"ckpt_{checkpoint:08d}.pth"
+            else:
+                checkpoint_name = checkpoint
+            checkpoint_path = osp.join(output_dir, "checkpoints", checkpoint_name)
+        print("Creating checkpoint", osp.basename(checkpoint_path))
+    else:
+        print("Loading checkpoint", osp.basename(checkpoint_path))
 
     data = torch.load(checkpoint_path)
     state_dict = {}
@@ -72,5 +77,5 @@ def load_model(
         print("Missing keys:", missing)
     if len(unexpected) > 0:
         print("Unexpected keys:", unexpected)
-    model = model.eval()
+    model = model
     return model, cfg
