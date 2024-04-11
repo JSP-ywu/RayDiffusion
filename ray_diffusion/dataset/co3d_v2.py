@@ -23,9 +23,9 @@ TRAINING_CATEGORIES = [
     "apple",
     "backpack",
     "banana",
-    "baseballbat",
-    "baseballglove",
-    "bench",
+    # "baseballbat",
+    # "baseballglove",
+    # "bench",
     # "bicycle",
     # "bottle",
     # "bowl",
@@ -65,7 +65,7 @@ TRAINING_CATEGORIES = [
 
 TEST_CATEGORIES = [
     "ball",
-    "book",
+    # "book",
     # "couch",
     # "frisbee",
     # "hotdog",
@@ -246,9 +246,6 @@ class Co3dDataset(Dataset):
         if co3d_dir is not None:
             self.co3d_dir = co3d_dir
             self.co3d_annotation_dir = co3d_annotation_dir
-        else:
-            self.co3d_dir = CO3D_DIR
-            self.co3d_annotation_dir = CO3D_ANNOTATION_DIR
 
         if isinstance(self.category, str):
             self.category = [self.category]
@@ -337,14 +334,7 @@ class Co3dDataset(Dataset):
         sequence_name = self.sequence_list[index % len(self.sequence_list)]
         metadata = self.rotations[sequence_name]
 
-        if self.sample_num is not None:
-            with open(
-                order_path.format(sample_num=self.sample_num, category=self.category[0])
-            ) as f:
-                order = json.load(f)
-            ids = order[sequence_name][:num_to_load]
-        else:
-            ids = np.random.choice(len(metadata), num_to_load, replace=False)
+        ids = np.random.choice(len(metadata), num_to_load, replace=False)
 
         return self.get_data(index=index, ids=ids)
 
