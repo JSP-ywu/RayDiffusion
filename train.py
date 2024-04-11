@@ -7,10 +7,12 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import configargparse
 
+from pytorch3d.renderer import PerspectiveCameras
+
 from ray_diffusion.dataset.co3d_v2 import Co3dDataset
 from ray_diffusion.dataset.custom import CustomDataset
 
-from ray_diffusion.utils.rays import cameras_to_rays
+from ray_diffusion.utils.rays import cameras_to_rays, Rays
 
 #from ray_diffusion.model.diffuser import RayDiffuser
 #from ray_diffusion.model.dit import Dit
@@ -22,7 +24,7 @@ from ray_diffusion.inference.predict import predict_cameras
 CUSTOM_KEY = None
 
 import wandb
-with open('./wandb_key.txt', 'r') as f:
+with open('./wandb_key.txt', 'r') as f: # Use your own authorized key
     wandb_key = f.readline()
 wandb.login(key=wandb_key)
 wandb.init(project="RayDiffusion - compute_x0")
@@ -80,7 +82,7 @@ def train(): # Train
     '''
     Train
     '''
-    # set loss
+    # set loss / L2 loss
     loss_fn = nn.MSELoss()
 
     # set optimizer
@@ -95,15 +97,32 @@ def train(): # Train
             print('\t',kk,':',vv)
     print('----------------------------------------------------')
 
-    for epoch in range(cfg.training.max_itertations):
-        print("Epoch : {epoch}".format(epoch=epoch),"----------")
-        for batch_idx, batch in enumerate(dl):
+    for iter in range(cfg.training.max_itertations):
+        print("Iterations : {iter}".format(iter=iter),"----------")
+        for batch_idx, batches in enumerate(dl):
             # Generate GT Ray
+            # B x N x H*W x 6
+            org_rays = cameras_to_rays(cameras=PerspectiveCameras(R=batches['R'], T=batches['T']),
+                                      crop_parameters=batches['crop_parameters'])
+            print(org_rays.size())
+            gt_rays = Rays.from_spatial(org_rays)
+            print(gt_rays.size())
 
             # Generate Predicted Ray
-
+            # B x N x H*W x 6
+            p_rays = predict_cameras(model=model,
+                                     images=batches['images'],
+                                     device=device,
+                                     pred_x0=cfg.training.pred_x0,
+                                     crop_parameters=batches['crop_parameters'],
+                                     return_rays=True)[1]
+            print(p_rays.size())
+            pred_rays = Rays.from_spatial(p_rays)
+            print(pred_rays.size())
+            
             # Calculate Loss
-            loss = loss_fn(gt_ray, pred_ray) # According to Section 3.2 & 3.3
+            loss = loss_fn(gt_rays, pred_rays) # According to Section 3.2 & 3.3
+            # loss = loss_fn(gt_intrinsics, pred_intrinsics) # calculate loss using intrinsics
 
             # Backpropagation
             optimizer.zero_grad()
@@ -112,6 +131,10 @@ def train(): # Train
 
             # Logging
             wandb.log({"Training loss" : loss.item()})
+            if batch_idx % (int(len(dl) / 10)): # Print around 10 times per iteration
+                print('Batch Iter[{batch_idx}/{batch_len}]'.format(batch_idx=batch_idx, batch_len=len(dl)),
+                      'Training loss : {loss:0.03f}'.format(loss.item()))
+
 
             
 if __name__ == '__main__':
