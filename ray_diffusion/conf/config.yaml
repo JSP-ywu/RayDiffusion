@@ -25,7 +25,7 @@ training:
   unit_normalize_moments: False
 
 model:
-  pred_x0: False
+  pred_x0: True
   reweight_eps_loss: False
   model_type: dit
   num_patches_x: 16
@@ -48,12 +48,3 @@ dataset:
   name: co3d
   category: ""
   apply_augmentation: True
-
-debug:
-  wandb: True
-  project_name: ray_diffusion
-
-hydra:
-  run:
-    dir: ./output/${now:%m%d_%H%M%S_%f}${training.job_key}
-  output_subdir: hydra
