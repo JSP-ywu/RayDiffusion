@@ -23,10 +23,10 @@ TRAINING_CATEGORIES = [
     "apple",
     "backpack",
     "banana",
-    # "baseballbat",
-    # "baseballglove",
-    # "bench",
-    # "bicycle",
+    "baseballbat",
+    "baseballglove",
+    "bench",
+    "bicycle",
     # "bottle",
     # "bowl",
     # "broccoli",
@@ -335,7 +335,8 @@ class Co3dDataset(Dataset):
         metadata = self.rotations[sequence_name]
 
         ids = np.random.choice(len(metadata), num_to_load, replace=False)
-
+        # index : sequence indices
+        # ids : image indices in sequence
         return self.get_data(index=index, ids=ids)
 
     def _get_scene_scale(self, sequence_name):
@@ -483,7 +484,7 @@ class Co3dDataset(Dataset):
         focal_lengths = torch.stack(FL)
         principal_points = torch.stack(PP)
         image_sizes = torch.stack(image_sizes)
-
+        # 1 sequence / n images(num_images default : 2)
         batch = {
             "model_id": sequence_name,
             "category": category,
