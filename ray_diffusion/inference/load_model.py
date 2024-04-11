@@ -48,7 +48,7 @@ def load_model(
         feature_extractor=cfg.model.feature_extractor,
         append_ndc=cfg.model.append_ndc,
     ).to(device)
-    
+
     if cfg.traning.resume:
         if checkpoint is None:
             checkpoint_path = sorted(glob(osp.join(output_dir, "checkpoints", "*.pth")))[-1]
@@ -58,24 +58,25 @@ def load_model(
             else:
                 checkpoint_name = checkpoint
             checkpoint_path = osp.join(output_dir, "checkpoints", checkpoint_name)
-        print("Creating checkpoint", osp.basename(checkpoint_path))
-    else:
         print("Loading checkpoint", osp.basename(checkpoint_path))
 
-    data = torch.load(checkpoint_path)
-    state_dict = {}
-    for k, v in data["state_dict"].items():
-        include = True
-        for ignore_key in ignore_keys:
-            if ignore_key in k:
-                include = False
-        if include:
-            state_dict[k] = v
+        data = torch.load(checkpoint_path)
+        state_dict = {}
+        for k, v in data["state_dict"].items():
+            include = True
+            for ignore_key in ignore_keys:
+                if ignore_key in k:
+                    include = False
+            if include:
+                state_dict[k] = v
 
-    missing, unexpected = model.load_state_dict(state_dict, strict=False)
-    if len(missing) > 0:
-        print("Missing keys:", missing)
-    if len(unexpected) > 0:
-        print("Unexpected keys:", unexpected)
-    model = model
+        missing, unexpected = model.load_state_dict(state_dict, strict=False)
+        if len(missing) > 0:
+            print("Missing keys:", missing)
+        if len(unexpected) > 0:
+            print("Unexpected keys:", unexpected)
+        model = model
+    else:
+        print("Start New Training")
+        model = model
     return model, cfg
