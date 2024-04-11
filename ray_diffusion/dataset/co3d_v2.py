@@ -335,7 +335,7 @@ class Co3dDataset(Dataset):
         metadata = self.rotations[sequence_name]
 
         ids = np.random.choice(len(metadata), num_to_load, replace=False)
-        # index : sequence indices
+        # index : sequence indices in categories
         # ids : image indices in sequence
         return self.get_data(index=index, ids=ids)
 
