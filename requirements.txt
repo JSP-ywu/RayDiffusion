@@ -20,3 +20,4 @@ plotly
 scipy
 timm
 wandb
+chardet
