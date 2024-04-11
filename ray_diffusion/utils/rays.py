@@ -121,7 +121,7 @@ class Rays(object):
         rays = torch.transpose(rays, -1, -2)
         return cls(
             rays=rays,
-            is_plucker=True,
+            is_plucker=False,
             moments_rescale=moments_rescale,
             ndc_coordinates=ndc_coordinates,
         )
@@ -244,7 +244,7 @@ def cameras_to_rays(
     cameras,
     crop_parameters,
     use_half_pix=True,
-    use_plucker=True,
+    use_plucker=False,
     num_patches_x=16,
     num_patches_y=16,
 ):
