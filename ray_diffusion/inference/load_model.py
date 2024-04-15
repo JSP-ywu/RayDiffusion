@@ -26,7 +26,8 @@ def load_model(
         device (str): Device to load the model on.
         custom_keys (dict): Dictionary of custom keys to override in the config.
     """
-    cfg = OmegaConf.load(osp.join(output_dir, "config.yaml"))
+    cfg = OmegaConf.load(osp.join(output_dir, "..",
+                                  "ray_diffusion", "conf","config.yaml"))
     
     if custom_keys is not None:
         for k, v in custom_keys.items():
@@ -47,9 +48,9 @@ def load_model(
         noise_scheduler=noise_scheduler,
         feature_extractor=cfg.model.feature_extractor,
         append_ndc=cfg.model.append_ndc,
-    ).to(device)
+    )
 
-    if cfg.traning.resume:
+    if cfg.training.resume:
         if checkpoint is None:
             checkpoint_path = sorted(glob(osp.join(output_dir, "checkpoints", "*.pth")))[-1]
         else:
