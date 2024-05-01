@@ -121,7 +121,7 @@ class Rays(object):
         rays = torch.transpose(rays, -1, -2)
         return cls(
             rays=rays,
-            is_plucker=False,
+            is_plucker=True,
             moments_rescale=moments_rescale,
             ndc_coordinates=ndc_coordinates,
         )
@@ -264,7 +264,9 @@ def cameras_to_rays(
     crop_parameters_list = (
         crop_parameters if crop_parameters is not None else [None for _ in cameras]
     )
-    for camera, crop_param in zip(cameras, crop_parameters_list):
+
+    for crop_param, camera in zip(crop_parameters_list, cameras):
+        # print(crop_param)
         xyd_grid = compute_ndc_coordinates(
             crop_parameters=crop_param,
             use_half_pix=use_half_pix,
@@ -277,6 +279,8 @@ def cameras_to_rays(
                 xyd_grid.reshape(-1, 3), world_coordinates=True, from_ndc=True
             )
         )
+        # if i == (len(cameras) - 1):
+        #     break
     unprojected = torch.stack(unprojected, dim=0)  # (N, P, 3)
     origins = cameras.get_camera_center().unsqueeze(1)  # (N, 1, 3)
     origins = origins.repeat(1, num_patches_x * num_patches_y, 1)  # (N, P, 3)

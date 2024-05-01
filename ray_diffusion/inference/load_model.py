@@ -26,8 +26,7 @@ def load_model(
         device (str): Device to load the model on.
         custom_keys (dict): Dictionary of custom keys to override in the config.
     """
-    cfg = OmegaConf.load(osp.join(output_dir, "..",
-                                  "ray_diffusion", "conf","config.yaml"))
+    cfg = OmegaConf.load(osp.join(output_dir, "..", "ray_diffusion", "conf", "config.yaml"))
     
     if custom_keys is not None:
         for k, v in custom_keys.items():

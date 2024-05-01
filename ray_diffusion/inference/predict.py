@@ -53,7 +53,7 @@ def predict_cameras(
             model,
             images.unsqueeze(0),
             device,
-            visualize=True,
+            visualize=False,
             pred_x0=pred_x0,
             crop_parameters=crop_parameters.unsqueeze(0),
             stop_iteration=-1,

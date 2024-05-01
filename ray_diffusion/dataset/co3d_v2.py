@@ -21,12 +21,12 @@ from torchvision import transforms
 
 TRAINING_CATEGORIES = [
     "apple",
-    "backpack",
+    #"backpack",
     "banana",
-    "baseballbat",
-    "baseballglove",
-    "bench",
-    "bicycle",
+    #"baseballbat",
+    #"baseballglove",
+    #"bench",
+    #"bicycle",
     # "bottle",
     # "bowl",
     # "broccoli",
@@ -155,12 +155,12 @@ def construct_camera_from_batch(batch, device):
     if isinstance(device, int):
         device = f"cuda:{device}"
 
-    return PerspectiveCameras(
+    return PerspectiveCameras( # B x N -> (B x N)
         R=batch["R"].reshape(-1, 3, 3),
         T=batch["T"].reshape(-1, 3),
-        focal_length=batch["focal_lengths"].reshape(-1, 2),
-        principal_point=batch["principal_points"].reshape(-1, 2),
-        image_size=batch["image_sizes"].reshape(-1, 2),
+        focal_length=batch["focal_length"].reshape(-1, 2),
+        principal_point=batch["principal_point"].reshape(-1, 2),
+        image_size=batch["image_size"].reshape(-1, 2),
         device=device,
     )
 

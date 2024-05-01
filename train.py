@@ -10,10 +10,11 @@ import argparse
 
 from pytorch3d.renderer import PerspectiveCameras
 
-from ray_diffusion.dataset.co3d_v2 import Co3dDataset
+from ray_diffusion.dataset.co3d_v2 import Co3dDataset, construct_camera_from_batch
 from ray_diffusion.dataset.custom import CustomDataset
 
 from ray_diffusion.utils.rays import cameras_to_rays, Rays
+from ray_diffusion.inference.ddpm import inference_ddpm
 
 #from ray_diffusion.model.diffuser import RayDiffuser
 #from ray_diffusion.model.dit import Dit
@@ -26,10 +27,12 @@ CUSTOM_KEY = None
 HOME = '/home/vision/pjs/RayDiffusion'
 
 import wandb
-with open('./wandb_key.txt', 'r') as f: # Use your own authorized key
+with open(osp.join(HOME, 'wandb_key.txt'), 'r') as f: # Use your own authorized key
     wandb_key = f.readline()
 wandb.login(key=wandb_key)
-wandb.init(project="RayDiffusion - compute_x0")
+wandb.init(project="RayDiffusion - compute_x0",
+           mode='disabled',
+           )
 
 '''
 Parsing Argument
@@ -67,7 +70,7 @@ def train(): # Train
     model, cfg = load_model(args.outputpath,
                             checkpoint=args.checkpoint,
                             device=device)
-    n_gpus = 8
+    n_gpus = 4
 
     model = nn.DataParallel(model, device_ids=list(range(n_gpus)))
     model.to(device)
@@ -91,6 +94,7 @@ def train(): # Train
     dl = DataLoader(ds,
                     batch_size=cfg.training.batch_size,
                     num_workers=cfg.training.num_workers * n_gpus,
+                    pin_memory=True,
                     shuffle=True)
     '''
     Train
@@ -111,39 +115,43 @@ def train(): # Train
     print('----------------------------------------------------')
     epoch = 0
     cur_iter = 0
+    model.train()
     while True:
-        print("Epoch : {epoch}".format(epoch=epoch),"----------")
+        print("Epoch : {epoch:03d}".format(epoch=epoch),"---------------------------------------------")
         for batch_idx, batches in enumerate(dl):
             images = batches['image'].to(device, non_blocking=True)
+            crop_parameters = batches['crop_parameters'].to(device, non_blocking=True)
             # Generate GT Ray
-            # (B x N) x H*W x 6
-            print(images.size()) # B x N x C x H x W
-            print(batches['R'].size()) # B x N x 3 x 3
-            print(batches['T'].size()) # B x N x 3
-            print(batches['crop_parameters'].size()) # B x N x 4
-            org_rays = cameras_to_rays(cameras=PerspectiveCameras(R=batches['R'],
-                                                                  T=batches['T'],
-                                                                  device=device),
-                                      crop_parameters=batches['crop_parameters'])
-            print(org_rays.size())
-            gt_rays = Rays.from_spatial(org_rays)[0]
-            print(gt_rays.size())
-
+            cameras = construct_camera_from_batch(batches,
+                                                device)
+            
+            # (B*N) x (H*W) x 6
+            gt_rays = cameras_to_rays(cameras=cameras,
+                                    crop_parameters=crop_parameters.reshape(-1, 4))
             # Generate Predicted Ray
-            # (B x N) x H*W x 6
-            p_rays = predict_cameras(model=model,
-                                     images=images,
-                                     device=device,
-                                     pred_x0=cfg.training.pred_x0,
-                                     crop_parameters=batches['crop_parameters'],
-                                     return_rays=True)[1]
-            print(p_rays.size())
-            pred_rays = Rays.from_spatial(p_rays)[0]
-            print(pred_rays.size())
+            # B x N x 6 x H x W
+            rays_final = inference_ddpm(
+                model,
+                images,
+                device,
+                visualize=False,
+                pred_x0=cfg.model.pred_x0,
+                crop_parameters=crop_parameters,
+                stop_iteration=-1,
+                num_patches_x=cfg.model.num_patches_x,
+                num_patches_y=cfg.model.num_patches_y,
+                pbar=False,
+                beta_tilde=False,
+                normalize_moments=True,
+                rescale_noise="zero",
+                max_num_images=cfg.model.num_images,
+            )
+            # B x N x H*W x 6
+            pred_rays = Rays.from_spatial(rays_final)
             
             # Calculate Loss
-            loss = loss_fn(gt_rays, pred_rays) # According to Section 3.2 & 3.3
-            # loss = loss_fn(gt_intrinsics, pred_intrinsics) # calculate loss using intrinsics
+            # According to Section 3.2 & 3.3
+            loss = loss_fn(gt_rays.rays, pred_rays.rays.view(-1,(cfg.model.num_patches_x * cfg.model.num_patches_y),6))
 
             # Backpropagation
             optimizer.zero_grad()
@@ -154,15 +162,15 @@ def train(): # Train
             wandb.log({"Training loss" : loss.item()})
             if batch_idx % (int(len(dl) / 10)): # Print around 10 times per iteration
                 print('Batch Iter[{batch_idx:04d}/{batch_len}]\t'.format(batch_idx=batch_idx, batch_len=len(dl)),
-                      'Training loss : {loss:0.3f}'.format(loss.item()))
+                        'Training loss : {loss:0.3f}'.format(loss=loss.item()))
 
             # Save model
             if cur_iter % cfg.training.interval_save_checkpoint == 0:
                 print('Save checkpoint {cur_iter:05d}'.format(cur_iter=cur_iter))
                 ckpt_name = "ckpt_{cur_iter:05d}.pth.tar".format(cur_iter=cur_iter)
                 save_dict = {"state_dict" : model.state_dict(),
-                             "iteration" : cur_iter,
-                             "epoch" : epoch,}
+                                "iteration" : cur_iter,
+                                "epoch" : epoch,}
                 torch.save(save_dict, osp.join(args.outputpath, args.run_name, ckpt_name))
 
             cur_iter = cur_iter + 1

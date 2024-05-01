@@ -10,7 +10,7 @@ training:
   mixed_precision: True
   matmul_precision: high 
   max_iterations: 100000
-  batch_size: 64
+  batch_size: 16
   num_workers: 4
   gpu_id: 0
   freeze_encoder: True
